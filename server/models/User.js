@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['citizen', 'official'],
+    enum: ['citizen', 'official', 'admin'],
     default: 'citizen',
     required: true
   },
@@ -31,7 +31,7 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['Roads', 'Electricity', 'Drainage', 'Sanitation', null],
     default: null,
-    // Only officials have departments
+    // Officials must have a department; admin and citizen have none
     validate: {
       validator: function(value) {
         if (this.role === 'official') {

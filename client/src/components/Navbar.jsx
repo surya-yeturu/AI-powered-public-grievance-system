@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import '../styles/Navbar.css';
 
 const Navbar = () => {
-  const { user, logout, isAuthenticated, isCitizen, isOfficial } = useAuth();
+  const { user, logout, isAuthenticated, isCitizen, isOfficial, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -38,10 +38,10 @@ const Navbar = () => {
                 </>
               )}
               
-              {isOfficial && (
+              {(isOfficial || isAdmin) && (
                 <>
                   <Link to="/official/dashboard" className="navbar-link">Dashboard</Link>
-                  <span className="navbar-department">{user.department}</span>
+                  <span className="navbar-department">{isAdmin ? 'All Departments' : user.department}</span>
                 </>
               )}
               

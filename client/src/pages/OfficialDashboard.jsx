@@ -10,7 +10,7 @@ const OfficialDashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [filters, setFilters] = useState({ priority: '', status: '' });
+  const [filters, setFilters] = useState({ priority: '', status: '', department: '' });
 
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -58,8 +58,10 @@ const OfficialDashboard = () => {
     <div className="dashboard-container">
       <div className="dashboard-header">
         <div>
-          <h1>{user.department} Department Dashboard</h1>
-          <p className="dashboard-subtitle">Manage and resolve civic complaints</p>
+          <h1>{user.role === 'admin' ? 'All Departments' : `${user.department} Department`} Dashboard</h1>
+          <p className="dashboard-subtitle">
+            {user.role === 'admin' ? 'View and oversee all department complaints' : 'Manage and resolve civic complaints'}
+          </p>
         </div>
       </div>
 
@@ -100,6 +102,18 @@ const OfficialDashboard = () => {
       </div>
 
       <div className="filter-section">
+        {user.role === 'admin' && (
+          <div className="filter-group">
+            <label>Filter by Department:</label>
+            <div className="filter-buttons">
+              <button className={`filter-btn ${filters.department === '' ? 'active' : ''}`} onClick={() => handleFilterChange('department', '')}>All</button>
+              <button className={`filter-btn ${filters.department === 'Roads' ? 'active' : ''}`} onClick={() => handleFilterChange('department', 'Roads')}>Roads</button>
+              <button className={`filter-btn ${filters.department === 'Electricity' ? 'active' : ''}`} onClick={() => handleFilterChange('department', 'Electricity')}>Electricity</button>
+              <button className={`filter-btn ${filters.department === 'Drainage' ? 'active' : ''}`} onClick={() => handleFilterChange('department', 'Drainage')}>Drainage</button>
+              <button className={`filter-btn ${filters.department === 'Sanitation' ? 'active' : ''}`} onClick={() => handleFilterChange('department', 'Sanitation')}>Sanitation</button>
+            </div>
+          </div>
+        )}
         <div className="filter-group">
           <label>Filter by Status:</label>
           <div className="filter-buttons">

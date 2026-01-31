@@ -29,7 +29,7 @@ const Login = () => {
       if (result.success) {
         if (result.user.role === 'citizen') {
           navigate('/citizen/dashboard');
-        } else if (result.user.role === 'official') {
+        } else if (result.user.role === 'official' || result.user.role === 'admin') {
           navigate('/official/dashboard');
         }
       } else {
@@ -89,7 +89,10 @@ const Login = () => {
         <div className="demo-credentials">
           <h3>Demo Credentials:</h3>
           <p><strong>Citizen:</strong> citizen@test.com / password123</p>
-          <p><strong>Official (Roads):</strong> official.roads@test.com / password123</p>
+          <p><strong>Admin (all departments):</strong> admin@test.com / password123</p>
+          <p><strong>Roads:</strong> official.roads@test.com / password123</p>
+          <p><strong>Electricity:</strong> official.electricity@test.com / password123</p>
+          <p><strong>Sanitation:</strong> official.sanitation@test.com / password123</p>
         </div>
       </div>
     </div>

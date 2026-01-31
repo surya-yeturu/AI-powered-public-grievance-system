@@ -15,7 +15,7 @@ const ComplaintDetail = () => {
   });
 
   const { id } = useParams();
-  const { isOfficial } = useAuth();
+  const { user, isOfficial } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -174,7 +174,7 @@ const ComplaintDetail = () => {
           </div>
         )}
 
-        {isOfficial && (
+        {isOfficial && user?.role === 'official' && user?.department && complaint.department === user.department && (
           <div className="detail-section update-section">
             <h3>Update Complaint Status</h3>
             <form onSubmit={handleUpdateSubmit} className="update-form">

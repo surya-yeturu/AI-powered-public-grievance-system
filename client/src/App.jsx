@@ -47,11 +47,11 @@ function App() {
                 }
               />
 
-              {/* Official Routes */}
+              {/* Official / Admin Routes */}
               <Route
                 path="/official/dashboard"
                 element={
-                  <ProtectedRoute allowedRoles={['official']}>
+                  <ProtectedRoute allowedRoles={['official', 'admin']}>
                     <OfficialDashboard />
                   </ProtectedRoute>
                 }
@@ -59,7 +59,7 @@ function App() {
               <Route
                 path="/official/complaint/:id"
                 element={
-                  <ProtectedRoute allowedRoles={['official']}>
+                  <ProtectedRoute allowedRoles={['official', 'admin']}>
                     <ComplaintDetail />
                   </ProtectedRoute>
                 }

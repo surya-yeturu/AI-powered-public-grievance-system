@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const User = require('../models/User');
 const Complaint = require('../models/Complaint');
 
-// Sample data
+// Sample data: 1 citizen (for testing), 4 staff logins (admin + 3 departments)
 const users = [
   {
     name: 'John Citizen',
@@ -12,10 +12,10 @@ const users = [
     role: 'citizen'
   },
   {
-    name: 'Jane Citizen',
-    email: 'citizen2@test.com',
+    name: 'Admin (All Departments)',
+    email: 'admin@test.com',
     password: 'password123',
-    role: 'citizen'
+    role: 'admin'
   },
   {
     name: 'Roads Department Official',
@@ -30,13 +30,6 @@ const users = [
     password: 'password123',
     role: 'official',
     department: 'Electricity'
-  },
-  {
-    name: 'Drainage Department Official',
-    email: 'official.drainage@test.com',
-    password: 'password123',
-    role: 'official',
-    department: 'Drainage'
   },
   {
     name: 'Sanitation Department Official',
@@ -122,12 +115,15 @@ const seedDatabase = async () => {
     console.log(`Created ${createdComplaints.length} sample complaints`);
 
     console.log('\n=== Seed Data Summary ===');
-    console.log('\nCitizen Accounts:');
+    console.log('\nCitizen (for testing):');
     createdUsers.filter(u => u.role === 'citizen').forEach(u => {
       console.log(`  - ${u.email} / password123`);
     });
-
-    console.log('\nOfficial Accounts:');
+    console.log('\nAdmin (sees all departments):');
+    createdUsers.filter(u => u.role === 'admin').forEach(u => {
+      console.log(`  - ${u.email} / password123`);
+    });
+    console.log('\nDepartment Officials (see only their department):');
     createdUsers.filter(u => u.role === 'official').forEach(u => {
       console.log(`  - ${u.email} / password123 (${u.department})`);
     });

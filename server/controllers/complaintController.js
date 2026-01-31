@@ -82,22 +82,25 @@ exports.getMyComplaints = async (req, res) => {
 };
 
 /**
- * Get complaints by department (Government Official only)
+ * Get complaints by department (Official) or all (Admin)
  * GET /api/complaints/department
- * Query params: ?priority=High&status=Pending
+ * Query params: ?priority=High&status=Pending&department=Roads (admin can filter by department)
  */
 exports.getComplaintsByDepartment = async (req, res) => {
   try {
-    const { department } = req.user;
-    const { priority, status } = req.query;
+    const { priority, status, department: queryDept } = req.query;
 
-    // Build filter
-    const filter = { department };
-    
+    // Admin sees all; official sees only their department
+    const filter = {};
+    if (req.user.role === 'admin') {
+      if (queryDept) filter.department = queryDept;
+    } else {
+      filter.department = req.user.department;
+    }
+
     if (priority) {
       filter.priority = priority;
     }
-    
     if (status) {
       filter.status = status;
     }
@@ -150,7 +153,7 @@ exports.getComplaintById = async (req, res) => {
       });
     }
 
-    // Officials can only view complaints from their department
+    // Officials can only view complaints from their department; admin can view any
     if (req.user.role === 'official' && complaint.department !== req.user.department) {
       return res.status(403).json({
         success: false,
@@ -238,15 +241,13 @@ exports.getComplaintStats = async (req, res) => {
   try {
     let filter = {};
 
-    // If official, filter by department
+    // Admin: no filter (all complaints). Official: by department. Citizen: by citizenId
     if (req.user.role === 'official') {
       filter.department = req.user.department;
-    }
-
-    // If citizen, filter by citizenId
-    if (req.user.role === 'citizen') {
+    } else if (req.user.role === 'citizen') {
       filter.citizenId = req.user._id;
     }
+    // admin: filter stays {}
 
     const stats = await Complaint.aggregate([
       { $match: filter },

@@ -32,13 +32,13 @@ router.get(
 
 /**
  * @route   GET /api/complaints/department
- * @desc    Get complaints by department (with optional filters)
- * @access  Private (Official only)
+ * @desc    Get complaints by department (official) or all (admin)
+ * @access  Private (Official or Admin)
  */
 router.get(
   '/department',
   authenticate,
-  authorize('official'),
+  authorize('official', 'admin'),
   complaintController.getComplaintsByDepartment
 );
 
