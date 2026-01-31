@@ -2,38 +2,30 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/ComplaintCard.css';
 
-const ComplaintCard = ({ complaint, showCitizenInfo = false, onClick }) => {
+const ComplaintCard = ({ complaint, showCitizenInfo = false, onClick, lastUpdated }) => {
   const navigate = useNavigate();
 
   const getPriorityClass = (priority) => {
     switch (priority) {
-      case 'High':
-        return 'priority-high';
-      case 'Medium':
-        return 'priority-medium';
-      case 'Low':
-        return 'priority-low';
-      default:
-        return '';
+      case 'High': return 'priority-high';
+      case 'Medium': return 'priority-medium';
+      case 'Low': return 'priority-low';
+      default: return '';
     }
   };
 
   const getStatusClass = (status) => {
     switch (status) {
-      case 'Pending':
-        return 'status-pending';
-      case 'In Progress':
-        return 'status-in-progress';
-      case 'Resolved':
-        return 'status-resolved';
-      default:
-        return '';
+      case 'Pending': return 'status-pending';
+      case 'In Progress': return 'status-in-progress';
+      case 'Resolved': return 'status-resolved';
+      default: return '';
     }
   };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString('en-GB', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -50,54 +42,53 @@ const ComplaintCard = ({ complaint, showCitizenInfo = false, onClick }) => {
     }
   };
 
+  const preview = complaint.complaintText.length > 120
+    ? `${complaint.complaintText.substring(0, 120)}...`
+    : complaint.complaintText;
+
+  const basePriority = complaint.basePriority || complaint.priority;
+  const daysPending = complaint.daysPending ?? 0;
+  const showPriorityIncreased = complaint.status !== 'Resolved' && (complaint.priorityExplanation?.agingScore > 0 || daysPending > 0);
+
   return (
-    <div className="complaint-card" onClick={handleClick}>
-      <div className="complaint-card-header">
+    <article className="complaint-card" onClick={handleClick}>
+      <div className="complaint-card-top">
         <div className="complaint-badges">
-          <span className={`badge priority-badge ${getPriorityClass(complaint.priority)}`}>
-            {complaint.priority}
+          <span className={`badge priority-badge ${getPriorityClass(basePriority)}`}>
+            {basePriority}
           </span>
           <span className={`badge status-badge ${getStatusClass(complaint.status)}`}>
             {complaint.status}
           </span>
-          <span className="badge department-badge">
-            {complaint.department}
-          </span>
+          <span className="badge department-badge">{complaint.department}</span>
         </div>
-        <div className="complaint-date">
-          {formatDate(complaint.createdAt)}
-        </div>
+        <time className="complaint-date" dateTime={complaint.createdAt}>
+          Last updated: {formatDate(lastUpdated || complaint.updatedAt || complaint.createdAt)}
+        </time>
       </div>
 
-      <div className="complaint-card-body">
-        <p className="complaint-text">
-          {complaint.complaintText.length > 150
-            ? `${complaint.complaintText.substring(0, 150)}...`
-            : complaint.complaintText}
-        </p>
+      <p className="complaint-card-summary">{preview}</p>
 
-        <div className="complaint-info">
-          <div className="info-item">
-            <span className="info-label">📍 Location:</span>
-            <span className="info-value">{complaint.location}</span>
-          </div>
-
-          {showCitizenInfo && complaint.citizenId && (
-            <div className="info-item">
-              <span className="info-label">👤 Citizen:</span>
-              <span className="info-value">{complaint.citizenId.name}</span>
-            </div>
-          )}
-
-          {complaint.priorityReason && (
-            <div className="info-item">
-              <span className="info-label">🤖 AI Reason:</span>
-              <span className="info-value">{complaint.priorityReason}</span>
-            </div>
-          )}
-        </div>
+      <div className="complaint-card-meta">
+        <span className="meta-item">Location: {complaint.location}</span>
+        {complaint.status !== 'Resolved' && daysPending > 0 && (
+          <span className="meta-item">Days since submission: {daysPending}</span>
+        )}
+        {showCitizenInfo && complaint.citizenId && (
+          <span className="meta-item">Citizen: {complaint.citizenId.name}</span>
+        )}
       </div>
-    </div>
+
+      {showPriorityIncreased && (
+        <p className="complaint-card-message">Priority increased due to pending duration.</p>
+      )}
+
+      {onClick && (
+        <div className="complaint-card-action">
+          <span className="action-link">View / Update</span>
+        </div>
+      )}
+    </article>
   );
 };
 

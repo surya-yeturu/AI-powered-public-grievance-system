@@ -43,16 +43,23 @@ const Login = () => {
   };
 
   return (
-    <div className="auth-container">
+    <div className="auth-page">
       <div className="auth-card">
         <h1 className="auth-title">Login</h1>
-        <p className="auth-subtitle">Access your Smart City account</p>
+        <p className="auth-subtitle">Access your account to submit or manage civic complaints.</p>
+
+        <div className="auth-role-cues">
+          <span className="auth-cue citizen-cue">Citizen Login</span>
+          <span className="auth-cue-sep">|</span>
+          <span className="auth-cue official-cue">Government Official Login</span>
+        </div>
+        <p className="auth-instruction">Use the same form. Your role will be determined by your registered account.</p>
 
         {error && <div className="error-message">{error}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">Email address</label>
             <input
               type="email"
               id="email"
@@ -77,23 +84,16 @@ const Login = () => {
             />
           </div>
 
-          <button type="submit" className="auth-button" disabled={loading}>
-            {loading ? 'Logging in...' : 'Login'}
+          <button type="submit" className="auth-button btn btn-primary" disabled={loading}>
+            {loading ? 'Signing in...' : 'Sign in'}
           </button>
         </form>
 
         <div className="auth-footer">
-          <p>Don't have an account? <Link to="/register">Register as Citizen</Link></p>
+          <p>Do not have an account? <Link to="/register">Register as Citizen</Link></p>
         </div>
 
-        <div className="demo-credentials">
-          <h3>Demo Credentials:</h3>
-          <p><strong>Citizen:</strong> citizen@test.com / password123</p>
-          <p><strong>Admin (all departments):</strong> admin@test.com / password123</p>
-          <p><strong>Roads:</strong> official.roads@test.com / password123</p>
-          <p><strong>Electricity:</strong> official.electricity@test.com / password123</p>
-          <p><strong>Sanitation:</strong> official.sanitation@test.com / password123</p>
-        </div>
+        
       </div>
     </div>
   );

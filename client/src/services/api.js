@@ -60,4 +60,13 @@ export const complaintAPI = {
   getStats: () => api.get('/complaints/stats')
 };
 
+// Upload image (multipart) - do not set Content-Type so browser sets boundary
+export const uploadImage = (file) => {
+  const formData = new FormData();
+  formData.append('image', file);
+  return api.post('/upload', formData, {
+    headers: { 'Content-Type': undefined }
+  });
+};
+
 export default api;

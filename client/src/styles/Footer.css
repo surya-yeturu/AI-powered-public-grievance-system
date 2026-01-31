@@ -1,0 +1,47 @@
+.site-footer {
+  background-color: var(--color-primary);
+  color: #e9ecef;
+  padding: var(--spacing-xl) var(--spacing-md);
+  margin-top: auto;
+}
+
+.footer-container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  text-align: center;
+}
+
+.footer-brand {
+  margin-bottom: var(--spacing-md);
+}
+
+.footer-logo {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: #fff;
+}
+
+.footer-disclaimer {
+  font-size: var(--font-size-sm);
+  max-width: 640px;
+  margin: 0 auto var(--spacing-lg);
+  line-height: 1.6;
+  color: #ced4da;
+}
+
+.footer-links {
+  display: flex;
+  justify-content: center;
+  gap: var(--spacing-xl);
+  font-size: var(--font-size-sm);
+}
+
+.footer-links a {
+  color: #ced4da;
+  text-decoration: none;
+}
+
+.footer-links a:hover {
+  color: #fff;
+  text-decoration: underline;
+}

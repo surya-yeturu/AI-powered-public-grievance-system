@@ -1,83 +1,85 @@
 .complaint-card {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background-color: var(--color-bg-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .complaint-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-sm);
 }
 
-.complaint-card-header {
+.complaint-card-top {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 1rem;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
+  margin-bottom: var(--spacing-md);
 }
 
 .complaint-badges {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
+  gap: var(--spacing-sm);
 }
 
 .complaint-date {
-  color: #6b7280;
-  font-size: 0.875rem;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
 }
 
-.complaint-card-body {
+.complaint-card-summary {
+  font-size: var(--font-size-base);
+  color: var(--color-text);
+  line-height: 1.5;
+  margin-bottom: var(--spacing-md);
+}
+
+.complaint-card-meta {
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
 }
 
-.complaint-text {
-  color: #374151;
-  line-height: 1.6;
-  font-size: 1rem;
+.meta-item {
+  margin: 0;
 }
 
-.complaint-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.info-item {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.5rem;
-  font-size: 0.875rem;
-}
-
-.info-label {
-  color: #6b7280;
+.complaint-card-message {
+  font-size: var(--font-size-sm);
+  color: var(--color-accent);
+  margin-top: var(--spacing-sm);
   font-weight: 600;
-  min-width: 100px;
 }
 
-.info-value {
-  color: #374151;
-  flex: 1;
+.complaint-card-action {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--color-border-light);
+}
+
+.action-link {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  color: var(--color-accent);
+}
+
+.complaint-card:hover .action-link {
+  text-decoration: underline;
 }
 
 @media (max-width: 768px) {
   .complaint-card {
-    padding: 1rem;
+    padding: var(--spacing-md);
   }
 
-  .complaint-card-header {
+  .complaint-card-top {
     flex-direction: column;
-  }
-
-  .info-label {
-    min-width: 80px;
   }
 }

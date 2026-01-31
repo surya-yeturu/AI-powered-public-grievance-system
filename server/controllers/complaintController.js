@@ -1,41 +1,50 @@
 const Complaint = require('../models/Complaint');
 const { classifyComplaint } = require('../services/openaiService');
+const { calculatePriorityScore, enrichComplaint, sortByPriorityScore } = require('../services/priorityScoreService');
 
 /**
  * Create a new complaint (Citizen only)
+ * Hybrid AI + rules → basePriority, then dynamic score calculated.
  * POST /api/complaints
  */
 exports.createComplaint = async (req, res) => {
   try {
-    const { complaintText, imageUrl, location } = req.body;
+    const { complaintText, imageUrl, location, mapLocationUrl } = req.body;
     const citizenId = req.user._id;
 
-    // Use OpenAI to classify the complaint
     console.log('Classifying complaint with OpenAI...');
-    const classification = await classifyComplaint(complaintText);
+    const classification = await classifyComplaint(complaintText, location);
+    const d = classification.data;
 
-    // Create complaint with AI classification
     const complaint = new Complaint({
       citizenId,
       complaintText,
       imageUrl: imageUrl || null,
       location,
-      department: classification.data.department,
-      priority: classification.data.priority,
-      priorityReason: classification.data.reason,
+      mapLocationUrl: mapLocationUrl || null,
+      department: d.department,
+      basePriority: d.basePriority,
+      priority: d.basePriority,
+      priorityReason: d.reason,
+      escalatedByRules: d.escalatedByRules || false,
+      sensitiveLocation: d.sensitiveLocation || false,
       status: 'Pending'
     });
 
-    await complaint.save();
+    const initialScore = calculatePriorityScore(complaint);
+    complaint.priorityScore = initialScore.priorityScore;
+    complaint.lastScoreUpdatedAt = new Date();
 
-    // Populate citizen details
+    await complaint.save();
     await complaint.populate('citizenId', 'name email');
+
+    const enriched = enrichComplaint(complaint);
 
     res.status(201).json({
       success: true,
       message: 'Complaint submitted successfully',
       data: {
-        complaint,
+        complaint: enriched,
         aiClassification: {
           success: classification.success,
           note: !classification.success ? 'AI classification failed, using defaults' : 'AI classification successful'
@@ -55,6 +64,7 @@ exports.createComplaint = async (req, res) => {
 
 /**
  * Get all complaints for logged-in citizen
+ * Recalculate priority score; order by score DESC, createdAt ASC.
  * GET /api/complaints/my
  */
 exports.getMyComplaints = async (req, res) => {
@@ -62,13 +72,14 @@ exports.getMyComplaints = async (req, res) => {
     const citizenId = req.user._id;
 
     const complaints = await Complaint.find({ citizenId })
-      .sort({ createdAt: -1 }) // Most recent first
       .populate('updatedBy', 'name department');
+
+    const enriched = sortByPriorityScore(complaints);
 
     res.status(200).json({
       success: true,
-      count: complaints.length,
-      data: { complaints }
+      count: enriched.length,
+      data: { complaints: enriched }
     });
 
   } catch (error) {
@@ -83,14 +94,13 @@ exports.getMyComplaints = async (req, res) => {
 
 /**
  * Get complaints by department (Official) or all (Admin)
- * GET /api/complaints/department
- * Query params: ?priority=High&status=Pending&department=Roads (admin can filter by department)
+ * Ordered by FinalPriorityScore DESC, createdAt ASC. Includes execution rank.
+ * Query params: ?basePriority=High&priority=High&status=Pending&department=Roads
  */
 exports.getComplaintsByDepartment = async (req, res) => {
   try {
-    const { priority, status, department: queryDept } = req.query;
+    const { basePriority, priority, status, department: queryDept } = req.query;
 
-    // Admin sees all; official sees only their department
     const filter = {};
     if (req.user.role === 'admin') {
       if (queryDept) filter.department = queryDept;
@@ -98,22 +108,26 @@ exports.getComplaintsByDepartment = async (req, res) => {
       filter.department = req.user.department;
     }
 
-    if (priority) {
-      filter.priority = priority;
+    const priorityFilter = basePriority || priority;
+    if (priorityFilter) {
+      filter.$or = [
+        { basePriority: priorityFilter },
+        { priority: priorityFilter }
+      ];
     }
-    if (status) {
-      filter.status = status;
-    }
+    if (status) filter.status = status;
 
     const complaints = await Complaint.find(filter)
-      .sort({ priority: 1, createdAt: -1 }) // High priority first, then recent
       .populate('citizenId', 'name email')
       .populate('updatedBy', 'name');
 
+    const enriched = sortByPriorityScore(complaints);
+    const withRank = enriched.map((c, i) => ({ ...c, executionRank: i + 1 }));
+
     res.status(200).json({
       success: true,
-      count: complaints.length,
-      data: { complaints }
+      count: withRank.length,
+      data: { complaints: withRank }
     });
 
   } catch (error) {
@@ -128,6 +142,7 @@ exports.getComplaintsByDepartment = async (req, res) => {
 
 /**
  * Get single complaint by ID
+ * Recalculates priority score and returns with explanation.
  * GET /api/complaints/:id
  */
 exports.getComplaintById = async (req, res) => {
@@ -144,8 +159,6 @@ exports.getComplaintById = async (req, res) => {
       });
     }
 
-    // Check authorization
-    // Citizens can only view their own complaints
     if (req.user.role === 'citizen' && complaint.citizenId._id.toString() !== req.user._id.toString()) {
       return res.status(403).json({
         success: false,
@@ -153,7 +166,6 @@ exports.getComplaintById = async (req, res) => {
       });
     }
 
-    // Officials can only view complaints from their department; admin can view any
     if (req.user.role === 'official' && complaint.department !== req.user.department) {
       return res.status(403).json({
         success: false,
@@ -161,9 +173,11 @@ exports.getComplaintById = async (req, res) => {
       });
     }
 
+    const enriched = enrichComplaint(complaint);
+
     res.status(200).json({
       success: true,
-      data: { complaint }
+      data: { complaint: enriched }
     });
 
   } catch (error) {
@@ -204,23 +218,24 @@ exports.updateComplaintStatus = async (req, res) => {
       });
     }
 
-    // Update complaint
     complaint.status = status;
-    if (resolutionRemarks) {
-      complaint.resolutionRemarks = resolutionRemarks;
-    }
+    if (resolutionRemarks) complaint.resolutionRemarks = resolutionRemarks;
     complaint.updatedBy = officialId;
 
-    await complaint.save();
+    const recalc = calculatePriorityScore(complaint);
+    complaint.priorityScore = recalc.priorityScore;
+    complaint.lastScoreUpdatedAt = new Date();
 
-    // Populate fields
+    await complaint.save();
     await complaint.populate('citizenId', 'name email');
     await complaint.populate('updatedBy', 'name department');
+
+    const enriched = enrichComplaint(complaint);
 
     res.status(200).json({
       success: true,
       message: 'Complaint status updated successfully',
-      data: { complaint }
+      data: { complaint: enriched }
     });
 
   } catch (error) {

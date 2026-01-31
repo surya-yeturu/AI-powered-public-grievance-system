@@ -16,10 +16,21 @@ const Navbar = () => {
     <nav className="navbar">
       <div className="navbar-container">
         <Link to="/" className="navbar-logo">
-          🏙️ Smart City Grievance
+          Smart City Grievance Platform
         </Link>
 
         <div className="navbar-menu">
+          <Link to="/" className="navbar-link">Home</Link>
+          <Link to="/citizen/new-complaint" className="navbar-link">Submit Complaint</Link>
+
+          {isAuthenticated && isCitizen && (
+            <Link to="/citizen/dashboard" className="navbar-link">My Complaints</Link>
+          )}
+
+          {(isOfficial || isAdmin) && (
+            <Link to="/official/dashboard" className="navbar-link">Dashboard</Link>
+          )}
+
           {!isAuthenticated ? (
             <>
               <Link to="/login" className="navbar-link">Login</Link>
@@ -27,25 +38,13 @@ const Navbar = () => {
             </>
           ) : (
             <>
-              <span className="navbar-user">
-                {user.name} ({user.role})
-              </span>
-              
-              {isCitizen && (
-                <>
-                  <Link to="/citizen/dashboard" className="navbar-link">My Complaints</Link>
-                  <Link to="/citizen/new-complaint" className="navbar-link">New Complaint</Link>
-                </>
-              )}
-              
+              <span className="navbar-user">{user.name}</span>
               {(isOfficial || isAdmin) && (
-                <>
-                  <Link to="/official/dashboard" className="navbar-link">Dashboard</Link>
-                  <span className="navbar-department">{isAdmin ? 'All Departments' : user.department}</span>
-                </>
+                <span className="navbar-department">
+                  {isAdmin ? 'All Departments' : user.department}
+                </span>
               )}
-              
-              <button onClick={handleLogout} className="navbar-button">
+              <button type="button" onClick={handleLogout} className="navbar-button">
                 Logout
               </button>
             </>

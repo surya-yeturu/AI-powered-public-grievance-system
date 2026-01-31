@@ -53,7 +53,26 @@ exports.complaintValidation = [
   body('imageUrl')
     .optional({ values: 'falsy' })
     .trim()
-    .isURL().withMessage('Image URL must be valid')
+    .custom((value) => {
+      if (!value) return true;
+      // Accept relative path from file upload (e.g. /uploads/xxx.jpg)
+      if (value.startsWith('/uploads/')) return true;
+      // Accept valid full URLs when pasted
+      if (value.startsWith('http://') || value.startsWith('https://')) {
+        try {
+          new URL(value);
+          return true;
+        } catch {
+          return false;
+        }
+      }
+      return false;
+    })
+    .withMessage('Image must be an uploaded file path or a valid URL'),
+  body('mapLocationUrl')
+    .optional({ values: 'falsy' })
+    .trim()
+    .isURL().withMessage('Map location URL must be valid')
 ];
 
 // Status update validation rules

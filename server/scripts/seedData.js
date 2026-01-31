@@ -45,6 +45,7 @@ const sampleComplaints = [
     complaintText: 'There is a large pothole on Main Street that is causing damage to vehicles. It has been there for weeks and is getting worse with rain.',
     location: 'Main Street, near City Hall',
     department: 'Roads',
+    basePriority: 'High',
     priority: 'High',
     priorityReason: 'Safety hazard affecting multiple vehicles daily',
     status: 'In Progress'
@@ -53,6 +54,7 @@ const sampleComplaints = [
     complaintText: 'Street lights are not working in our neighborhood for the past 3 days. It is very dark and unsafe at night.',
     location: 'Green Valley Sector 5',
     department: 'Electricity',
+    basePriority: 'High',
     priority: 'High',
     priorityReason: 'Public safety concern affecting entire neighborhood',
     status: 'Pending'
@@ -61,6 +63,7 @@ const sampleComplaints = [
     complaintText: 'The drainage system is clogged and water is accumulating on the road during rain.',
     location: 'Park Avenue, Block B',
     department: 'Drainage',
+    basePriority: 'Medium',
     priority: 'Medium',
     priorityReason: 'Recurring issue that needs attention before monsoon',
     status: 'Pending'
@@ -69,6 +72,7 @@ const sampleComplaints = [
     complaintText: 'Garbage has not been collected from our area for 4 days. The smell is unbearable.',
     location: 'Riverside Colony, Gate 2',
     department: 'Sanitation',
+    basePriority: 'High',
     priority: 'High',
     priorityReason: 'Health hazard requiring immediate attention',
     status: 'Resolved',
@@ -78,6 +82,7 @@ const sampleComplaints = [
     complaintText: 'A traffic signal at the intersection is malfunctioning and causing confusion.',
     location: 'Highway Junction, Sector 12',
     department: 'Roads',
+    basePriority: 'High',
     priority: 'High',
     priorityReason: 'Traffic safety issue requiring urgent repair',
     status: 'Pending'

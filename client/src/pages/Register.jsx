@@ -49,16 +49,21 @@ const Register = () => {
   };
 
   return (
-    <div className="auth-container">
+    <div className="auth-page">
       <div className="auth-card">
         <h1 className="auth-title">Register</h1>
-        <p className="auth-subtitle">Create your citizen account</p>
+        <p className="auth-subtitle">Create a citizen account to submit civic complaints.</p>
+
+        <div className="auth-role-cues">
+          <span className="auth-cue citizen-cue">Citizen registration only</span>
+        </div>
+        <p className="auth-instruction">Government officials are registered by the administration.</p>
 
         {error && <div className="error-message">{error}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
-            <label htmlFor="name">Full Name</label>
+            <label htmlFor="name">Full name</label>
             <input
               type="text"
               id="name"
@@ -71,7 +76,7 @@ const Register = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">Email address</label>
             <input
               type="email"
               id="email"
@@ -91,25 +96,25 @@ const Register = () => {
               name="password"
               value={formData.password}
               onChange={handleChange}
-              placeholder="Enter your password (min 6 characters)"
+              placeholder="Minimum 6 characters"
               required
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
+            <label htmlFor="confirmPassword">Confirm password</label>
             <input
               type="password"
               id="confirmPassword"
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
-              placeholder="Confirm your password"
+              placeholder="Re-enter your password"
               required
             />
           </div>
 
-          <button type="submit" className="auth-button" disabled={loading}>
+          <button type="submit" className="auth-button btn btn-primary" disabled={loading}>
             {loading ? 'Registering...' : 'Register'}
           </button>
         </form>

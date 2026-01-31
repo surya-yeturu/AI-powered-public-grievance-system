@@ -22,10 +22,21 @@ const complaintSchema = new mongoose.Schema({
     required: [true, 'Location is required'],
     trim: true
   },
+  mapLocationUrl: {
+    type: String,
+    default: null,
+    trim: true
+  },
   department: {
     type: String,
     enum: ['Roads', 'Electricity', 'Drainage', 'Sanitation'],
     required: [true, 'Department is required']
+  },
+  // Base priority from AI + rules (High/Medium/Low). Kept in sync with priority for backward compatibility.
+  basePriority: {
+    type: String,
+    enum: ['High', 'Medium', 'Low'],
+    default: 'Medium'
   },
   priority: {
     type: String,
@@ -36,6 +47,24 @@ const complaintSchema = new mongoose.Schema({
     type: String,
     default: '',
     trim: true
+  },
+  // Dynamic priority score: baseScore + aging + location bonus. Recalculated on fetch/update.
+  priorityScore: {
+    type: Number,
+    default: 0
+  },
+  lastScoreUpdatedAt: {
+    type: Date,
+    default: Date.now
+  },
+  // Explainability: set when rules override AI (e.g. sensitive location, duration)
+  escalatedByRules: {
+    type: Boolean,
+    default: false
+  },
+  sensitiveLocation: {
+    type: Boolean,
+    default: false
   },
   status: {
     type: String,
