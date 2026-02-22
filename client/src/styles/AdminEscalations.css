@@ -1,0 +1,46 @@
+.escalation-header {
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+.btn-run-check {
+  flex-shrink: 0;
+}
+
+.escalation-empty {
+  margin-top: var(--spacing-xl);
+}
+
+.escalation-alerts-section {
+  margin-top: var(--spacing-lg);
+}
+
+.escalation-table-wrap {
+  border-left: 4px solid var(--color-status-pending, #dc2626);
+}
+
+.escalation-table tr.escalation-resolution {
+  background-color: rgba(220, 38, 38, 0.06);
+}
+
+.escalation-table tr.escalation-response {
+  background-color: rgba(245, 158, 11, 0.06);
+}
+
+.escalation-table .col-days {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.escalation-table .col-reason {
+  max-width: 200px;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.complaint-id-small {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  margin-top: 0.25rem;
+}

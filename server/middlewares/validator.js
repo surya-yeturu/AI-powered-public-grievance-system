@@ -75,12 +75,15 @@ exports.complaintValidation = [
     .isURL().withMessage('Map location URL must be valid')
 ];
 
-// Status update validation rules
+// Status update validation rules (status required; remarks/resolutionRemarks optional)
 exports.statusUpdateValidation = [
   body('status')
     .notEmpty().withMessage('Status is required')
     .isIn(['Pending', 'In Progress', 'Resolved']).withMessage('Invalid status value'),
   body('resolutionRemarks')
+    .optional()
+    .trim(),
+  body('remarks')
     .optional()
     .trim()
 ];

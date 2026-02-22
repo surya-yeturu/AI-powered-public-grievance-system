@@ -49,6 +49,9 @@ const ComplaintCard = ({ complaint, showCitizenInfo = false, onClick, lastUpdate
   const basePriority = complaint.basePriority || complaint.priority;
   const daysPending = complaint.daysPending ?? 0;
   const showPriorityIncreased = complaint.status !== 'Resolved' && (complaint.priorityExplanation?.agingScore > 0 || daysPending > 0);
+  const hasProgressImages = complaint.progressUpdates?.some((u) => u.images?.length) ?? false;
+  const showWorkInProgressBadge = complaint.status === 'In Progress' && hasProgressImages;
+  const showResolvedPhotosBadge = complaint.status === 'Resolved' && hasProgressImages;
 
   return (
     <article className="complaint-card" onClick={handleClick}>
@@ -61,6 +64,12 @@ const ComplaintCard = ({ complaint, showCitizenInfo = false, onClick, lastUpdate
             {complaint.status}
           </span>
           <span className="badge department-badge">{complaint.department}</span>
+          {showWorkInProgressBadge && (
+            <span className="badge complaint-card-badge-images">Work in Progress – Images Available</span>
+          )}
+          {showResolvedPhotosBadge && (
+            <span className="badge complaint-card-badge-resolved">Issue Resolved – View Completion Photos</span>
+          )}
         </div>
         <time className="complaint-date" dateTime={complaint.createdAt}>
           Last updated: {formatDate(lastUpdated || complaint.updatedAt || complaint.createdAt)}
@@ -81,6 +90,10 @@ const ComplaintCard = ({ complaint, showCitizenInfo = false, onClick, lastUpdate
 
       {showPriorityIncreased && (
         <p className="complaint-card-message">Priority increased due to pending duration.</p>
+      )}
+
+      {complaint.inTodayPlan && complaint.status !== 'Resolved' && (
+        <p className="complaint-card-scheduled">Your complaint is scheduled for review today.</p>
       )}
 
       {onClick && (

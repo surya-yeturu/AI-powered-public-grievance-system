@@ -3,6 +3,7 @@ const router = express.Router();
 const complaintController = require('../controllers/complaintController');
 const { authenticate, authorize } = require('../middlewares/auth');
 const { complaintValidation, statusUpdateValidation, validate } = require('../middlewares/validator');
+const { optionalProgressImages } = require('../middlewares/uploadProgressImages');
 
 /**
  * @route   POST /api/complaints
@@ -43,6 +44,18 @@ router.get(
 );
 
 /**
+ * @route   GET /api/complaints/daily-plan
+ * @desc    Get today's recommended work plan for the department
+ * @access  Private (Official or Admin)
+ */
+router.get(
+  '/daily-plan',
+  authenticate,
+  authorize('official', 'admin'),
+  complaintController.getDailyPlan
+);
+
+/**
  * @route   GET /api/complaints/stats
  * @desc    Get complaint statistics
  * @access  Private
@@ -66,13 +79,14 @@ router.get(
 
 /**
  * @route   PATCH /api/complaints/:id/status
- * @desc    Update complaint status
+ * @desc    Update complaint status (optional progress/completion images via multipart)
  * @access  Private (Official only)
  */
 router.patch(
   '/:id/status',
   authenticate,
-  authorize('official'),
+  authorize('official', 'admin'),
+  optionalProgressImages,
   statusUpdateValidation,
   validate,
   complaintController.updateComplaintStatus

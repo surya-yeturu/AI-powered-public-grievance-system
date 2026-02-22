@@ -7,6 +7,7 @@ import '../styles/Dashboard.css';
 const OfficialDashboard = () => {
   const [complaints, setComplaints] = useState([]);
   const [stats, setStats] = useState(null);
+  const [dailyPlan, setDailyPlan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filters, setFilters] = useState({ priority: '', basePriority: '', status: '', department: '' });
@@ -23,15 +24,21 @@ const OfficialDashboard = () => {
       setLoading(true);
       const params = { ...filters };
       if (filters.priority) params.basePriority = filters.priority;
-      const [complaintsRes, statsRes] = await Promise.all([
+      const departmentForPlan = user.role === 'admin' && filters.department ? filters.department : null;
+      const [complaintsRes, statsRes, planRes] = await Promise.all([
         complaintAPI.getDepartmentComplaints(params),
-        complaintAPI.getStats()
+        complaintAPI.getStats(),
+        user.department || departmentForPlan
+          ? complaintAPI.getDailyPlan(departmentForPlan ? { department: departmentForPlan } : {})
+          : Promise.resolve({ data: { data: { plan: null } } })
       ]);
       setComplaints(complaintsRes.data.data.complaints);
       setStats(statsRes.data.data.stats);
+      setDailyPlan(planRes.data?.data?.plan ?? null);
     } catch (err) {
       setError('Failed to load complaints');
       console.error(err);
+      setDailyPlan(null);
     } finally {
       setLoading(false);
     }
@@ -76,6 +83,39 @@ const OfficialDashboard = () => {
       </div>
 
       {error && <div className="error-message">{error}</div>}
+
+      {dailyPlan && (dailyPlan.tasks?.length > 0 || dailyPlan.summary) && (
+        <section className="daily-plan-section">
+          <h2 className="daily-plan-title">Today&apos;s Recommended Work Plan</h2>
+          {dailyPlan.summary && <p className="daily-plan-summary-text">{dailyPlan.summary}</p>}
+          <p className="daily-plan-note">{dailyPlan.note}</p>
+          {dailyPlan.tasks?.length > 0 ? (
+          <ol className="daily-plan-list">
+            {dailyPlan.tasks.map((task) => (
+              <li key={task.complaintId} className="daily-plan-item">
+                <div className="daily-plan-item-main">
+                  <span className="daily-plan-rank">{task.rank}</span>
+                  <div className="daily-plan-item-body">
+                    <p className="daily-plan-summary">{task.complaintSummary}</p>
+                    <div className="daily-plan-meta">
+                      <span className={`badge priority-badge ${getPriorityClass(task.basePriority)}`}>{task.basePriority}</span>
+                      <span className="daily-plan-days">Days pending: {task.daysPending}</span>
+                      <span className="daily-plan-score">Score: {task.priorityScore}</span>
+                    </div>
+                    <p className="daily-plan-reason">{task.selectionReason}</p>
+                  </div>
+                  <button type="button" className="btn btn-primary btn-sm" onClick={() => handleView(task.complaintId)}>
+                    View / Update
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ol>
+          ) : (
+            <p className="daily-plan-empty">No tasks in today&apos;s plan. Plan is based on current open tasks and daily capacity.</p>
+          )}
+        </section>
+      )}
 
       <div className="stats-grid">
         <div className="stat-card">
@@ -175,6 +215,7 @@ const OfficialDashboard = () => {
                   if (c.status !== 'Resolved' && daysPending > 0) indicators.push({ key: 'delay', label: 'Urgent due to delay' });
                   if (c.sensitiveLocation) indicators.push({ key: 'location', label: 'Sensitive location' });
                   if (c.escalatedByRules) indicators.push({ key: 'ai', label: 'AI escalated' });
+                  if (c.escalatedToAdmin) indicators.push({ key: 'escalated', label: 'Escalated – Admin Notified' });
                   return (
                     <tr key={c._id}>
                       <td className="col-rank">{c.executionRank ?? '—'}</td>

@@ -58,6 +58,29 @@
   font-weight: 600;
 }
 
+.complaint-card-scheduled {
+  font-size: var(--font-size-sm);
+  color: var(--color-status-resolved, #0d9488);
+  margin-top: var(--spacing-sm);
+  font-weight: 600;
+  padding: var(--spacing-sm) var(--spacing-md);
+  background: rgba(13, 148, 136, 0.08);
+  border-radius: var(--radius);
+  border-left: 3px solid var(--color-status-resolved, #0d9488);
+}
+
+.complaint-card-badge-images {
+  background: var(--color-status-progress-bg, rgba(59, 130, 246, 0.15));
+  color: var(--color-status-progress, #2563eb);
+  font-size: 0.75rem;
+}
+
+.complaint-card-badge-resolved {
+  background: var(--color-status-resolved-bg, rgba(34, 197, 94, 0.15));
+  color: var(--color-status-resolved, #16a34a);
+  font-size: 0.75rem;
+}
+
 .complaint-card-action {
   margin-top: var(--spacing-md);
   padding-top: var(--spacing-md);

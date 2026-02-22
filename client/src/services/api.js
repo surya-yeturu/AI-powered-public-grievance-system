@@ -55,8 +55,12 @@ export const complaintAPI = {
   create: (data) => api.post('/complaints', data),
   getMyComplaints: () => api.get('/complaints/my'),
   getDepartmentComplaints: (params) => api.get('/complaints/department', { params }),
+  getDailyPlan: (params) => api.get('/complaints/daily-plan', { params }),
   getComplaintById: (id) => api.get(`/complaints/${id}`),
-  updateStatus: (id, data) => api.patch(`/complaints/${id}/status`, data),
+  updateStatus: (id, data) =>
+    data instanceof FormData
+      ? api.patch(`/complaints/${id}/status`, data, { headers: { 'Content-Type': undefined } })
+      : api.patch(`/complaints/${id}/status`, data),
   getStats: () => api.get('/complaints/stats')
 };
 
@@ -67,6 +71,14 @@ export const uploadImage = (file) => {
   return api.post('/upload', formData, {
     headers: { 'Content-Type': undefined }
   });
+};
+
+// Admin-only: escalation check, escalation list, admin note, follow-up (no leading slash so baseURL is used)
+export const adminAPI = {
+  runCheckEscalations: () => api.post('admin/check-escalations'),
+  getEscalations: () => api.get('admin/escalations'),
+  addAdminNote: (complaintId, data) => api.patch(`admin/complaints/${complaintId}/note`, data),
+  markFollowUpInitiated: (complaintId) => api.patch(`admin/complaints/${complaintId}/follow-up`)
 };
 
 export default api;

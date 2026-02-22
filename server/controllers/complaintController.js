@@ -1,6 +1,7 @@
 const Complaint = require('../models/Complaint');
 const { classifyComplaint } = require('../services/openaiService');
 const { calculatePriorityScore, enrichComplaint, sortByPriorityScore } = require('../services/priorityScoreService');
+const { generateDailyPlan, getComplaintIdsInTodayPlan } = require('../services/dailyPlanService');
 
 /**
  * Create a new complaint (Citizen only)
@@ -76,6 +77,16 @@ exports.getMyComplaints = async (req, res) => {
 
     const enriched = sortByPriorityScore(complaints);
 
+    // Citizen transparency: mark complaints that are in today's plan for their department
+    const departments = [...new Set(enriched.map((c) => c.department))];
+    const planIdsByDept = {};
+    for (const dept of departments) {
+      planIdsByDept[dept] = await getComplaintIdsInTodayPlan(dept);
+    }
+    enriched.forEach((c) => {
+      c.inTodayPlan = planIdsByDept[c.department]?.has(c._id.toString()) ?? false;
+    });
+
     res.status(200).json({
       success: true,
       count: enriched.length,
@@ -87,6 +98,37 @@ exports.getMyComplaints = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to fetch complaints',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * Get today's recommended work plan for the official's department (or specified department for admin).
+ * GET /api/complaints/daily-plan?date=YYYY-MM-DD&department=Roads (admin only for department)
+ */
+exports.getDailyPlan = async (req, res) => {
+  try {
+    const { date, department: queryDept } = req.query;
+    const department = req.user.role === 'admin' && queryDept
+      ? queryDept
+      : req.user.department;
+    if (!department) {
+      return res.status(400).json({
+        success: false,
+        message: 'Department is required. Officials use their assigned department; admin may pass ?department=.'
+      });
+    }
+    const plan = await generateDailyPlan(department, date || null);
+    res.status(200).json({
+      success: true,
+      data: { plan }
+    });
+  } catch (error) {
+    console.error('Get daily plan error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate daily plan',
       error: error.message
     });
   }
@@ -150,7 +192,9 @@ exports.getComplaintById = async (req, res) => {
     const { id } = req.params;
     const complaint = await Complaint.findById(id)
       .populate('citizenId', 'name email')
-      .populate('updatedBy', 'name department');
+      .populate('updatedBy', 'name department')
+      .populate('progressUpdates.updatedBy', 'name department')
+      .populate('adminNotes.addedBy', 'name');
 
     if (!complaint) {
       return res.status(404).json({
@@ -173,7 +217,10 @@ exports.getComplaintById = async (req, res) => {
       });
     }
 
-    const enriched = enrichComplaint(complaint);
+    let enriched = enrichComplaint(complaint);
+    if (req.user.role === 'citizen' && enriched.adminNotes) {
+      enriched = { ...enriched, adminNotes: undefined };
+    }
 
     res.status(200).json({
       success: true,
@@ -191,16 +238,16 @@ exports.getComplaintById = async (req, res) => {
 };
 
 /**
- * Update complaint status (Government Official only)
+ * Update complaint status (Official/Admin). Supports optional progress/completion images via multipart.
  * PATCH /api/complaints/:id/status
  */
 exports.updateComplaintStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status, resolutionRemarks } = req.body;
+    const { status, resolutionRemarks, remarks } = req.body;
     const officialId = req.user._id;
+    const files = req.files || [];
 
-    // Find complaint
     const complaint = await Complaint.findById(id);
 
     if (!complaint) {
@@ -210,17 +257,47 @@ exports.updateComplaintStatus = async (req, res) => {
       });
     }
 
-    // Check if official's department matches complaint department
-    if (complaint.department !== req.user.department) {
+    if (req.user.role !== 'admin' && complaint.department !== req.user.department) {
       return res.status(403).json({
         success: false,
         message: 'Access denied. This complaint is not in your department.'
       });
     }
 
+    // Status can only move forward: Pending → In Progress → Resolved (no going back to Pending)
+    const currentStatus = complaint.status;
+    if (status === 'Pending' && (currentStatus === 'In Progress' || currentStatus === 'Resolved')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Status cannot be set back to Pending once the complaint is In Progress or Resolved.'
+      });
+    }
+    if (currentStatus === 'Resolved' && status !== 'Resolved') {
+      return res.status(400).json({
+        success: false,
+        message: 'Resolved complaints cannot be changed to another status.'
+      });
+    }
+
+    const remarksText = (remarks && remarks.trim()) || (resolutionRemarks && resolutionRemarks.trim()) || '';
+
     complaint.status = status;
-    if (resolutionRemarks) complaint.resolutionRemarks = resolutionRemarks;
+    if (remarksText) complaint.resolutionRemarks = remarksText;
     complaint.updatedBy = officialId;
+    complaint.lastOfficialUpdateAt = new Date();
+
+    if (!complaint.progressUpdates) complaint.progressUpdates = [];
+
+    if (status === 'In Progress' || status === 'Resolved') {
+      const imageUrls = files.map((f) => `/uploads/${f.filename}`);
+      complaint.progressUpdates.push({
+        status,
+        images: imageUrls,
+        remarks: remarksText,
+        updatedBy: officialId,
+        updatedAt: new Date()
+      });
+    }
 
     const recalc = calculatePriorityScore(complaint);
     complaint.priorityScore = recalc.priorityScore;
@@ -229,6 +306,7 @@ exports.updateComplaintStatus = async (req, res) => {
     await complaint.save();
     await complaint.populate('citizenId', 'name email');
     await complaint.populate('updatedBy', 'name department');
+    await complaint.populate('progressUpdates.updatedBy', 'name department');
 
     const enriched = enrichComplaint(complaint);
 

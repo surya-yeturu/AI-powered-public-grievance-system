@@ -12,6 +12,14 @@ const Navbar = () => {
     navigate('/login');
   };
 
+  const userLabel = !isAuthenticated
+    ? null
+    : isAdmin
+      ? 'Admin · All Departments'
+      : isOfficial
+        ? `${user.name} · ${user.department}`
+        : user.name;
+
   return (
     <nav className="navbar">
       <div className="navbar-container">
@@ -28,7 +36,12 @@ const Navbar = () => {
           )}
 
           {(isOfficial || isAdmin) && (
-            <Link to="/official/dashboard" className="navbar-link">Dashboard</Link>
+            <>
+              <Link to="/official/dashboard" className="navbar-link">Dashboard</Link>
+              {isAdmin && (
+                <Link to="/admin/escalations" className="navbar-link navbar-link-alerts">Escalation Alerts</Link>
+              )}
+            </>
           )}
 
           {!isAuthenticated ? (
@@ -37,17 +50,12 @@ const Navbar = () => {
               <Link to="/register" className="navbar-link navbar-link-primary">Register</Link>
             </>
           ) : (
-            <>
-              <span className="navbar-user">{user.name}</span>
-              {(isOfficial || isAdmin) && (
-                <span className="navbar-department">
-                  {isAdmin ? 'All Departments' : user.department}
-                </span>
-              )}
+            <div className="navbar-user-section">
+              <span className="navbar-user-pill">{userLabel}</span>
               <button type="button" onClick={handleLogout} className="navbar-button">
                 Logout
               </button>
-            </>
+            </div>
           )}
         </div>
       </div>

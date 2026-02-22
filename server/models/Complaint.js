@@ -76,6 +76,15 @@ const complaintSchema = new mongoose.Schema({
     default: '',
     trim: true
   },
+  progressUpdates: [
+    {
+      status: { type: String, enum: ['In Progress', 'Resolved'], required: true },
+      images: [{ type: String, trim: true }],
+      remarks: { type: String, default: '', trim: true },
+      updatedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+      updatedAt: { type: Date, default: Date.now }
+    }
+  ],
   updatedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
@@ -88,6 +97,35 @@ const complaintSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
     default: Date.now
+  },
+  // Escalation & admin oversight (system-driven; officials cannot modify)
+  lastOfficialUpdateAt: {
+    type: Date,
+    default: null
+  },
+  escalationLevel: {
+    type: String,
+    enum: ['None', 'Response Delayed', 'Resolution Delayed'],
+    default: 'None'
+  },
+  escalatedAt: {
+    type: Date,
+    default: null
+  },
+  escalatedToAdmin: {
+    type: Boolean,
+    default: false
+  },
+  adminNotes: [
+    {
+      text: { type: String, required: true, trim: true },
+      addedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+      addedAt: { type: Date, default: Date.now }
+    }
+  ],
+  followUpInitiatedAt: {
+    type: Date,
+    default: null
   }
 });
 

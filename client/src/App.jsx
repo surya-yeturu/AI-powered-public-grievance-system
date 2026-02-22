@@ -13,6 +13,7 @@ import CitizenDashboard from './pages/CitizenDashboard';
 import NewComplaint from './pages/NewComplaint';
 import OfficialDashboard from './pages/OfficialDashboard';
 import ComplaintDetail from './pages/ComplaintDetail';
+import AdminEscalations from './pages/AdminEscalations';
 
 // Styles
 import './styles/App.css';
@@ -62,6 +63,14 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={['official', 'admin']}>
                     <ComplaintDetail />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/escalations"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AdminEscalations />
                   </ProtectedRoute>
                 }
               />
