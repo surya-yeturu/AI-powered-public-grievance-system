@@ -5,9 +5,7 @@
 
 const Complaint = require('../models/Complaint');
 
-const RESPONSE_DELAY_HOURS = 48;
-const RESOLUTION_DELAY_DAYS = 5;
-const CRITICAL_PRIORITY_HOURS = 24;
+const { RESPONSE_DELAY_HOURS, RESOLUTION_DELAY_DAYS, CRITICAL_PRIORITY_HOURS } = require('../config/scoring');
 
 const MS_HOUR = 60 * 60 * 1000;
 const MS_DAY = 24 * MS_HOUR;

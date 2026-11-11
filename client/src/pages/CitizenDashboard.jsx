@@ -10,6 +10,7 @@ const CitizenDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('all');
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -33,8 +34,11 @@ const CitizenDashboard = () => {
   };
 
   const getFilteredComplaints = () => {
-    if (filter === 'all') return complaints;
-    return complaints.filter(c => c.status === filter);
+    const q = query.trim().toLowerCase();
+    return complaints.filter((c) =>
+      (filter === 'all' || c.status === filter) &&
+      (!q || `${c.complaintText} ${c.location} ${c.department}`.toLowerCase().includes(q))
+    );
   };
 
   const getStatusCount = (status) => {
@@ -44,7 +48,8 @@ const CitizenDashboard = () => {
   if (loading) {
     return (
       <div className="page-container">
-        <div className="loading-container">Loading...</div>
+        <div className="stats-grid">{[1, 2, 3, 4].map((i) => <div key={i} className="skeleton skeleton-stat" />)}</div>
+        {[1, 2, 3].map((i) => <div key={i} className="skeleton skeleton-card" />)}
       </div>
     );
   }
@@ -88,6 +93,14 @@ const CitizenDashboard = () => {
         <button type="button" className={`filter-btn ${filter === 'Pending' ? 'active' : ''}`} onClick={() => setFilter('Pending')}>Pending</button>
         <button type="button" className={`filter-btn ${filter === 'In Progress' ? 'active' : ''}`} onClick={() => setFilter('In Progress')}>In Progress</button>
         <button type="button" className={`filter-btn ${filter === 'Resolved' ? 'active' : ''}`} onClick={() => setFilter('Resolved')}>Resolved</button>
+        <input
+          type="search"
+          className="search-input"
+          placeholder="Search complaints…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          aria-label="Search complaints"
+        />
       </div>
 
       <div className="complaints-section">

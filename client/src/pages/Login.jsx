@@ -8,7 +8,15 @@ const Login = () => {
     email: '',
     password: ''
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState(() => {
+    try {
+      if (sessionStorage.getItem('sessionExpired')) {
+        sessionStorage.removeItem('sessionExpired');
+        return 'Your session expired. Please sign in again.';
+      }
+    } catch { /* ignore */ }
+    return '';
+  });
   const [loading, setLoading] = useState(false);
 
   const { login } = useAuth();

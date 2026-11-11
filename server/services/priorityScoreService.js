@@ -4,10 +4,7 @@
  * Ensures fairness: low-priority complaints rise over time; sensitive locations get bonus.
  */
 
-const BASE_SCORES = { High: 100, Medium: 60, Low: 30 };
-const AGING_POINTS_PER_DAY = 10;
-const SENSITIVE_LOCATION_BONUS = 20;
-const SENSITIVE_KEYWORDS = ['school', 'hospital', 'main road', 'market', 'junction', 'highway', 'bus stop'];
+const { BASE_SCORES, AGING_POINTS_PER_DAY, AGING_MAX_DAYS, SENSITIVE_LOCATION_BONUS } = require('../config/scoring');
 
 /**
  * Get base score from basePriority (or legacy priority)
@@ -32,7 +29,7 @@ function getDaysPending(complaint) {
  */
 function getAgingScore(complaint) {
   if (complaint.status === 'Resolved') return 0;
-  const days = getDaysPending(complaint);
+  const days = Math.min(getDaysPending(complaint), AGING_MAX_DAYS);
   return days * AGING_POINTS_PER_DAY;
 }
 
@@ -40,12 +37,8 @@ function getAgingScore(complaint) {
  * Sensitive location bonus: +20 if complaint/location mentions sensitive keywords
  */
 function getLocationBonus(complaint) {
-  if (complaint.sensitiveLocation === true) return SENSITIVE_LOCATION_BONUS;
-  const text = `${(complaint.complaintText || '')} ${(complaint.location || '')}`.toLowerCase();
-  for (const kw of SENSITIVE_KEYWORDS) {
-    if (text.includes(kw)) return SENSITIVE_LOCATION_BONUS;
-  }
-  return 0;
+  // Set once at classification time (whole-word keyword match), so no re-scanning text here
+  return complaint.sensitiveLocation === true ? SENSITIVE_LOCATION_BONUS : 0;
 }
 
 /**
@@ -73,7 +66,7 @@ function calculatePriorityScore(complaint) {
   };
 
   if (explanation.aiReason) explanation.summary.push(explanation.aiReason);
-  if (agingScore > 0) explanation.summary.push(`+${agingScore} points (${daysPending} day(s) pending).`);
+  if (agingScore > 0) explanation.summary.push(`+${agingScore} points (${daysPending} day(s) pending${daysPending > AGING_MAX_DAYS ? `, aging capped at ${AGING_MAX_DAYS} days` : ''}).`);
   if (locationBonus > 0) explanation.summary.push(`+${locationBonus} points (sensitive location).`);
   if (explanation.escalatedByRules) explanation.summary.push('Priority increased by rules (safety/duration/location).');
 
@@ -116,5 +109,6 @@ module.exports = {
   getDaysPending,
   BASE_SCORES,
   AGING_POINTS_PER_DAY,
-  SENSITIVE_LOCATION_BONUS
+  SENSITIVE_LOCATION_BONUS,
+  AGING_MAX_DAYS
 };

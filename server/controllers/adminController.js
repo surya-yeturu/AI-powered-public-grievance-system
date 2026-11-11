@@ -4,6 +4,7 @@
  */
 
 const Complaint = require('../models/Complaint');
+const User = require('../models/User');
 const { checkEscalations, getLastOfficialActivity } = require('../services/escalationService');
 const { enrichComplaint } = require('../services/priorityScoreService');
 
@@ -25,8 +26,7 @@ exports.runCheckEscalations = async (req, res) => {
     console.error('Check escalations error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to run escalation check',
-      error: error.message
+      message: 'Failed to run escalation check'
     });
   }
 };
@@ -78,8 +78,7 @@ exports.getEscalations = async (req, res) => {
     console.error('Get escalations error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch escalations',
-      error: error.message
+      message: 'Failed to fetch escalations'
     });
   }
 };
@@ -126,8 +125,7 @@ exports.addAdminNote = async (req, res) => {
     console.error('Add admin note error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to add admin note',
-      error: error.message
+      message: 'Failed to add admin note'
     });
   }
 };
@@ -165,8 +163,71 @@ exports.markFollowUpInitiated = async (req, res) => {
     console.error('Mark follow-up error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to update follow-up status',
-      error: error.message
+      message: 'Failed to update follow-up status'
     });
+  }
+};
+
+/**
+ * List official accounts. GET /api/admin/officials
+ */
+exports.listOfficials = async (req, res) => {
+  try {
+    const officials = await User.find({ role: 'official' }).sort({ department: 1, name: 1 });
+    res.status(200).json({ success: true, count: officials.length, data: { officials } });
+  } catch (error) {
+    console.error('List officials error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch officials' });
+  }
+};
+
+/**
+ * Create an official account. POST /api/admin/officials
+ */
+exports.createOfficial = async (req, res) => {
+  try {
+    const { name, email, password, department } = req.body;
+    if (await User.findOne({ email })) {
+      return res.status(400).json({ success: false, message: 'User with this email already exists' });
+    }
+    const user = new User({ name, email, password, role: 'official', department });
+    await user.save();
+    res.status(201).json({ success: true, message: 'Official created', data: { official: user } });
+  } catch (error) {
+    console.error('Create official error:', error);
+    res.status(500).json({ success: false, message: 'Failed to create official' });
+  }
+};
+
+/**
+ * Analytics across departments. GET /api/admin/analytics
+ */
+exports.getAnalytics = async (req, res) => {
+  try {
+    const [byDepartment, totals, escalated, needsReview] = await Promise.all([
+      Complaint.aggregate([
+        { $group: { _id: { department: '$department', status: '$status' }, count: { $sum: 1 } } }
+      ]),
+      Complaint.aggregate([{ $group: { _id: '$status', count: { $sum: 1 } } }]),
+      Complaint.countDocuments({ escalatedToAdmin: true, status: { $ne: 'Resolved' } }),
+      Complaint.countDocuments({ needsReview: true, status: { $ne: 'Resolved' } })
+    ]);
+
+    const departments = {};
+    for (const row of byDepartment) {
+      const d = row._id.department;
+      departments[d] = departments[d] || { Pending: 0, 'In Progress': 0, Resolved: 0 };
+      departments[d][row._id.status] = row.count;
+    }
+    const statusTotals = { Pending: 0, 'In Progress': 0, Resolved: 0 };
+    totals.forEach((t) => { statusTotals[t._id] = t.count; });
+
+    res.status(200).json({
+      success: true,
+      data: { departments, statusTotals, escalatedOpen: escalated, needsReviewOpen: needsReview }
+    });
+  } catch (error) {
+    console.error('Analytics error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch analytics' });
   }
 };

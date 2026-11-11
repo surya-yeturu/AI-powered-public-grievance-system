@@ -1,5 +1,5 @@
 const Complaint = require('../models/Complaint');
-const { classifyComplaint } = require('../services/openaiService');
+const { classifyComplaint } = require('../services/geminiService');
 const { calculatePriorityScore, enrichComplaint, sortByPriorityScore } = require('../services/priorityScoreService');
 const { generateDailyPlan, getComplaintIdsInTodayPlan } = require('../services/dailyPlanService');
 
@@ -13,8 +13,7 @@ exports.createComplaint = async (req, res) => {
     const { complaintText, imageUrl, location, mapLocationUrl } = req.body;
     const citizenId = req.user._id;
 
-    console.log('Classifying complaint with OpenAI...');
-    const classification = await classifyComplaint(complaintText, location);
+    const classification = await classifyComplaint(complaintText, location, imageUrl);
     const d = classification.data;
 
     const complaint = new Complaint({
@@ -29,6 +28,8 @@ exports.createComplaint = async (req, res) => {
       priorityReason: d.reason,
       escalatedByRules: d.escalatedByRules || false,
       sensitiveLocation: d.sensitiveLocation || false,
+      aiConfidence: d.confidence ?? null,
+      needsReview: d.needsReview || false,
       status: 'Pending'
     });
 
@@ -48,7 +49,9 @@ exports.createComplaint = async (req, res) => {
         complaint: enriched,
         aiClassification: {
           success: classification.success,
-          note: !classification.success ? 'AI classification failed, using defaults' : 'AI classification successful'
+          confidence: d.confidence,
+          needsReview: d.needsReview,
+          note: !classification.success ? 'AI unavailable - keyword fallback used, flagged for review' : 'AI classification successful'
         }
       }
     });
@@ -57,8 +60,7 @@ exports.createComplaint = async (req, res) => {
     console.error('Create complaint error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to create complaint',
-      error: error.message
+      message: 'Failed to create complaint'
     });
   }
 };
@@ -97,8 +99,7 @@ exports.getMyComplaints = async (req, res) => {
     console.error('Get my complaints error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch complaints',
-      error: error.message
+      message: 'Failed to fetch complaints'
     });
   }
 };
@@ -128,8 +129,7 @@ exports.getDailyPlan = async (req, res) => {
     console.error('Get daily plan error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to generate daily plan',
-      error: error.message
+      message: 'Failed to generate daily plan'
     });
   }
 };
@@ -176,8 +176,7 @@ exports.getComplaintsByDepartment = async (req, res) => {
     console.error('Get department complaints error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch complaints',
-      error: error.message
+      message: 'Failed to fetch complaints'
     });
   }
 };
@@ -231,8 +230,7 @@ exports.getComplaintById = async (req, res) => {
     console.error('Get complaint by ID error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch complaint',
-      error: error.message
+      message: 'Failed to fetch complaint'
     });
   }
 };
@@ -320,8 +318,7 @@ exports.updateComplaintStatus = async (req, res) => {
     console.error('Update complaint status error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to update complaint status',
-      error: error.message
+      message: 'Failed to update complaint status'
     });
   }
 };
@@ -371,8 +368,7 @@ exports.getComplaintStats = async (req, res) => {
     console.error('Get complaint stats error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch statistics',
-      error: error.message
+      message: 'Failed to fetch statistics'
     });
   }
 };

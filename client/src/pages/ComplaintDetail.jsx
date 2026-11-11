@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { complaintAPI, adminAPI } from '../services/api';
+import { useToast } from '../context/ToastContext';
 import '../styles/ComplaintDetail.css';
 
 const MAX_PROGRESS_IMAGES = 5;
@@ -20,6 +21,7 @@ const ComplaintDetail = () => {
   const [noteSubmitting, setNoteSubmitting] = useState(false);
   const [followUpSubmitting, setFollowUpSubmitting] = useState(false);
 
+  const toast = useToast();
   const { id } = useParams();
   const { user, isOfficial } = useAuth();
   const navigate = useNavigate();
@@ -64,9 +66,9 @@ const ComplaintDetail = () => {
       }
       await fetchComplaint();
       setProgressImages([]);
-      alert('Complaint status updated successfully!');
+      toast.success('Complaint status updated');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to update complaint');
+      toast.error(err.response?.data?.message || 'Failed to update complaint');
     } finally {
       setUpdating(false);
     }
@@ -84,6 +86,7 @@ const ComplaintDetail = () => {
     try {
       await adminAPI.addAdminNote(id, { note: adminNoteText.trim() });
       setAdminNoteText('');
+      toast.success('Note added');
       await fetchComplaint();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to add note');
@@ -96,6 +99,7 @@ const ComplaintDetail = () => {
     setFollowUpSubmitting(true);
     try {
       await adminAPI.markFollowUpInitiated(id);
+      toast.success('Follow-up marked');
       await fetchComplaint();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to mark follow-up');
@@ -136,7 +140,7 @@ const ComplaintDetail = () => {
   if (loading) {
     return (
       <div className="page-container">
-        <div className="loading-container">Loading complaint details...</div>
+        <div className="loading-container"><div className="spinner" />Loading complaint details...</div>
       </div>
     );
   }
@@ -172,6 +176,9 @@ const ComplaintDetail = () => {
           <span className="badge department-badge">{complaint.department}</span>
           {complaint.daysPending != null && complaint.status !== 'Resolved' && (
             <span className="badge days-badge">Days pending: {complaint.daysPending}</span>
+          )}
+          {(user?.role === 'official' || user?.role === 'admin') && complaint.needsReview && (
+            <span className="badge review-badge" title="AI was unsure or unavailable - verify the department">Needs review</span>
           )}
           {(user?.role === 'official' || user?.role === 'admin') && complaint.escalatedToAdmin && (
             <span className="badge badge-escalated">Escalated – Admin Notified</span>
@@ -224,7 +231,32 @@ const ComplaintDetail = () => {
                 {complaint.priorityExplanation.escalatedByRules && (
                   <p className="detail-explanation-line"><strong>Rule escalation:</strong> Priority increased by rules (safety/duration/location).</p>
                 )}
-                <p className="detail-explanation-score"><strong>Final priority score:</strong> {complaint.priorityExplanation.finalScore ?? complaint.priorityScore}</p>
+                <div className="score-breakdown" aria-label="Score breakdown">
+                  {(() => {
+                    const e = complaint.priorityExplanation;
+                    const total = e.finalScore || 1;
+                    const parts = [
+                      { k: 'base', label: 'Base', v: e.baseScore },
+                      { k: 'aging', label: 'Age', v: e.agingScore },
+                      { k: 'loc', label: 'Location', v: e.locationBonus }
+                    ].filter((p) => p.v > 0);
+                    return (
+                      <>
+                        <div className="score-bar">
+                          {parts.map((p) => (
+                            <span key={p.k} className={`score-seg score-${p.k}`} style={{ width: `${(p.v / total) * 100}%` }} title={`${p.label}: ${p.v}`} />
+                          ))}
+                        </div>
+                        <div className="score-legend">
+                          {parts.map((p) => (
+                            <span key={p.k}><i className={`score-dot score-${p.k}`} />{p.label} {p.v}</span>
+                          ))}
+                          <strong>Total {e.finalScore}</strong>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
                 {complaint.priorityExplanation.summary?.length > 0 && (
                   <ul className="detail-explanation-summary">
                     {complaint.priorityExplanation.summary.map((s, i) => (

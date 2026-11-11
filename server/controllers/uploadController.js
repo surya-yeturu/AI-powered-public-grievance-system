@@ -29,8 +29,7 @@ exports.uploadImage = (req, res) => {
     console.error('Upload error:', error);
     res.status(500).json({
       success: false,
-      message: 'Upload failed',
-      error: error.message
+      message: 'Upload failed'
     });
   }
 };

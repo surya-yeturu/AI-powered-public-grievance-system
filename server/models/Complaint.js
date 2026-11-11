@@ -66,6 +66,15 @@ const complaintSchema = new mongoose.Schema({
     type: Boolean,
     default: false
   },
+  // AI transparency: confidence in department routing, and manual-review flag
+  aiConfidence: {
+    type: Number,
+    default: null
+  },
+  needsReview: {
+    type: Boolean,
+    default: false
+  },
   status: {
     type: String,
     enum: ['Pending', 'In Progress', 'Resolved'],
@@ -140,5 +149,10 @@ complaintSchema.pre('findOneAndUpdate', function(next) {
   this.set({ updatedAt: Date.now() });
   next();
 });
+
+// Indexes for common dashboard / escalation queries
+complaintSchema.index({ department: 1, status: 1 });
+complaintSchema.index({ citizenId: 1, createdAt: -1 });
+complaintSchema.index({ escalatedToAdmin: 1 });
 
 module.exports = mongoose.model('Complaint', complaintSchema);
