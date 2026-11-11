@@ -8,7 +8,7 @@ const generateToken = (userId) => {
   return jwt.sign(
     { userId },
     process.env.JWT_SECRET,
-    { expiresIn: '7d' } // Token expires in 7 days
+    { expiresIn: process.env.JWT_EXPIRES_IN || '1d' }
   );
 };
 
@@ -60,8 +60,7 @@ exports.register = async (req, res) => {
     console.error('Registration error:', error);
     res.status(500).json({
       success: false,
-      message: 'Registration failed',
-      error: error.message
+      message: 'Registration failed'
     });
   }
 };
@@ -116,8 +115,7 @@ exports.login = async (req, res) => {
     console.error('Login error:', error);
     res.status(500).json({
       success: false,
-      message: 'Login failed',
-      error: error.message
+      message: 'Login failed'
     });
   }
 };
@@ -144,8 +142,7 @@ exports.getProfile = async (req, res) => {
     console.error('Get profile error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to get profile',
-      error: error.message
+      message: 'Failed to get profile'
     });
   }
 };

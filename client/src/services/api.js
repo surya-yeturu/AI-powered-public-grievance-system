@@ -33,10 +33,13 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Token expired or invalid
+    const url = error.config?.url || '';
+    const isAuthCall = url.includes('auth/login') || url.includes('auth/register');
+    if (error.response?.status === 401 && !isAuthCall && localStorage.getItem('token')) {
+      // Session expired or invalid: clear it and send the user to login
       localStorage.removeItem('token');
       localStorage.removeItem('user');
+      sessionStorage.setItem('sessionExpired', '1');
       window.location.href = '/login';
     }
     return Promise.reject(error);
@@ -78,7 +81,10 @@ export const adminAPI = {
   runCheckEscalations: () => api.post('admin/check-escalations'),
   getEscalations: () => api.get('admin/escalations'),
   addAdminNote: (complaintId, data) => api.patch(`admin/complaints/${complaintId}/note`, data),
-  markFollowUpInitiated: (complaintId) => api.patch(`admin/complaints/${complaintId}/follow-up`)
+  markFollowUpInitiated: (complaintId) => api.patch(`admin/complaints/${complaintId}/follow-up`),
+  getAnalytics: () => api.get('admin/analytics'),
+  listOfficials: () => api.get('admin/officials'),
+  createOfficial: (data) => api.post('admin/officials', data)
 };
 
 export default api;

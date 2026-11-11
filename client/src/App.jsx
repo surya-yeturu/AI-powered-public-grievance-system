@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -14,14 +15,17 @@ import NewComplaint from './pages/NewComplaint';
 import OfficialDashboard from './pages/OfficialDashboard';
 import ComplaintDetail from './pages/ComplaintDetail';
 import AdminEscalations from './pages/AdminEscalations';
+import AdminOverview from './pages/AdminOverview';
 
 // Styles
 import './styles/App.css';
+import './styles/Extras.css';
 
 function App() {
   return (
     <Router>
       <AuthProvider>
+        <ToastProvider>
         <div className="App">
           <Navbar />
           <main className="main-content">
@@ -75,6 +79,15 @@ function App() {
                 }
               />
 
+              <Route
+                path="/admin/overview"
+                element={
+                  <ProtectedRoute allowedRoles={['admin']}>
+                    <AdminOverview />
+                  </ProtectedRoute>
+                }
+              />
+
               {/* Shared Routes */}
               <Route
                 path="/complaint/:id"
@@ -91,6 +104,7 @@ function App() {
           </main>
           <Footer />
         </div>
+        </ToastProvider>
       </AuthProvider>
     </Router>
   );

@@ -4,26 +4,24 @@ import { useAuth } from '../context/AuthContext';
 import '../styles/Home.css';
 
 const DEPARTMENTS = [
-  { title: 'Roads & Public Works', description: 'Potholes, road damage, traffic signals, and public infrastructure.' },
-  { title: 'Electricity & Street Lighting', description: 'Street lights, power outages, and electrical hazards.' },
-  { title: 'Sanitation & Waste Management', description: 'Garbage collection, waste disposal, and cleanliness.' },
-  { title: 'Drainage & Sewerage', description: 'Blocked drains, waterlogging, and sewer issues.' },
-  { title: 'Water Supply', description: 'Water supply disruptions, quality, and distribution.' },
+  { icon: '🛣️', title: 'Roads & Public Works', description: 'Potholes, road damage, footpaths, traffic signals and bridges.' },
+  { icon: '💡', title: 'Electricity & Street Lighting', description: 'Street lights, power outages, exposed wires and transformers.' },
+  { icon: '🗑️', title: 'Sanitation & Waste', description: 'Garbage collection, waste disposal and public cleanliness.' },
+  { icon: '🌊', title: 'Drainage & Sewerage', description: 'Blocked drains, waterlogging, overflow and sewer issues.' }
 ];
 
 const STEPS = [
-  { num: 1, title: 'Submit Complaint', text: 'Describe the issue with location and optional image.' },
-  { num: 2, title: 'AI-Based Analysis', text: 'The system classifies and prioritizes your complaint.' },
-  { num: 3, title: 'Department Routing', text: 'Complaint is routed to the responsible department.' },
-  { num: 4, title: 'Status Tracking', text: 'Track progress until resolution.' },
+  { num: 1, title: 'Describe the issue', text: 'Add details, location and an optional photo.' },
+  { num: 2, title: 'AI analyses it', text: 'Gemini reads the text and photo to find the category and urgency.' },
+  { num: 3, title: 'Routed instantly', text: 'It goes straight to the responsible department.' },
+  { num: 4, title: 'Track to resolution', text: 'Follow every update, with photos, until it is fixed.' }
 ];
 
-const BENEFITS = [
-  'Unified access to multiple departments',
-  'AI-assisted prioritization',
-  'Faster response handling',
-  'Transparent complaint tracking',
-  'Scalable smart-city architecture',
+const FEATURES = [
+  { title: 'Smart categorisation', text: 'Complaints are auto-routed to Roads, Electricity, Drainage or Sanitation.' },
+  { title: 'Age-based priority', text: 'Waiting complaints gain priority every day, so nothing is forgotten.' },
+  { title: 'Automatic escalation', text: 'Delays are detected automatically and escalated to administrators.' },
+  { title: 'Transparent decisions', text: 'Every priority score comes with a plain-language explanation.' }
 ];
 
 const Home = () => {
@@ -31,56 +29,52 @@ const Home = () => {
 
   return (
     <div className="home-page">
-      {/* Hero */}
       <section className="hero">
         <div className="hero-inner">
-          <h1 className="hero-title">AI-Powered Civic Grievance Management Platform</h1>
+          <span className="hero-eyebrow">AI-powered civic platform</span>
+          <h1 className="hero-title">Report it. We route it. Together we fix it.</h1>
           <p className="hero-subtitle">
-            A unified digital platform for reporting and prioritizing civic infrastructure issues.
-          </p>
-          <p className="hero-supporting">
-            Report issues related to roads, electricity, sanitation, drainage, and public utilities through a single intelligent system.
+            One place to report civic issues. AI understands your complaint, sends it to the right department and makes sure the most urgent problems are handled first.
           </p>
           <div className="hero-actions">
-            <Link to="/citizen/new-complaint" className="btn btn-primary hero-cta-primary">
-              Raise a Complaint
-            </Link>
+            {(!isAuthenticated || isCitizen) && (
+              <Link to="/citizen/new-complaint" className="btn hero-cta-primary">Raise a complaint</Link>
+            )}
             {isAuthenticated && isCitizen && (
-              <Link to="/citizen/dashboard" className="btn btn-outline hero-cta-secondary">
-                Track Complaint Status
-              </Link>
+              <Link to="/citizen/dashboard" className="btn hero-cta-secondary">Track my complaints</Link>
             )}
             {!isAuthenticated && (
-              <Link to="/login" className="btn btn-outline hero-cta-secondary">
-                Track Complaint Status
-              </Link>
+              <Link to="/login" className="btn hero-cta-secondary">Track complaint status</Link>
             )}
             {(isOfficial || isAdmin) && (
-              <Link to="/official/dashboard" className="btn btn-outline hero-cta-secondary">
-                Dashboard
-              </Link>
+              <Link to="/official/dashboard" className="btn hero-cta-primary">Open dashboard</Link>
             )}
           </div>
         </div>
       </section>
 
-      {/* About */}
-      <section className="section about-section">
+      <section className="section">
         <div className="section-inner">
-          <h2 className="section-title">Improving Urban Governance Through Intelligent Technology</h2>
-          <p className="about-text">
-            This platform simplifies civic issue reporting by providing a single interface for multiple municipal departments. AI-assisted classification and prioritization help authorities respond more efficiently.
-          </p>
+          <h2 className="section-title">How it works</h2>
+          <div className="steps-grid">
+            {STEPS.map((s) => (
+              <div key={s.num} className="step-card">
+                <span className="step-num">{s.num}</span>
+                <h3>{s.title}</h3>
+                <p>{s.text}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Departments */}
       <section className="section departments-section">
         <div className="section-inner">
-          <h2 className="section-title">Civic Departments Covered</h2>
+          <h2 className="section-title">Departments covered</h2>
           <div className="departments-grid">
-            {DEPARTMENTS.map((dept, i) => (
-              <div key={i} className="department-card">
+            {DEPARTMENTS.map((dept) => (
+              <div key={dept.title} className="department-card">
+                <span className="department-icon" aria-hidden="true">{dept.icon}</span>
                 <h3 className="department-card-title">{dept.title}</h3>
                 <p className="department-card-desc">{dept.description}</p>
               </div>
@@ -89,17 +83,28 @@ const Home = () => {
         </div>
       </section>
 
-      
-      
-      {/* CTA */}
-      <section className="section cta-section">
-        <div className="section-inner cta-inner">
-          <p className="cta-text">Contribute to better urban governance by reporting civic issues responsibly.</p>
-          <Link to="/citizen/new-complaint" className="btn btn-primary cta-btn">
-            Submit a Complaint
-          </Link>
+      <section className="section">
+        <div className="section-inner">
+          <h2 className="section-title">Built for fairness and speed</h2>
+          <div className="features-grid">
+            {FEATURES.map((f) => (
+              <div key={f.title} className="feature-card">
+                <h3>{f.title}</h3>
+                <p>{f.text}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
+
+      {(!isAuthenticated || isCitizen) && (
+        <section className="section cta-section">
+          <div className="section-inner cta-inner">
+            <p className="cta-text">See something that needs fixing? It takes less than a minute.</p>
+            <Link to="/citizen/new-complaint" className="btn hero-cta-primary cta-btn">Submit a complaint</Link>
+          </div>
+        </section>
+      )}
     </div>
   );
 };

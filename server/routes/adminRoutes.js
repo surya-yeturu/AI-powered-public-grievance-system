@@ -7,6 +7,7 @@ const express = require('express');
 const router = express.Router();
 const { authenticate, authorize } = require('../middlewares/auth');
 const adminController = require('../controllers/adminController');
+const { createOfficialValidation, idParam, validate } = require('../middlewares/validator');
 
 router.use(authenticate);
 router.use(authorize('admin'));
@@ -30,13 +31,20 @@ router.get('/escalations', adminController.getEscalations);
  * @desc    Add internal admin note to a complaint
  * @access  Private (Admin only)
  */
-router.patch('/complaints/:id/note', adminController.addAdminNote);
+router.patch('/complaints/:id/note', idParam, validate, adminController.addAdminNote);
 
 /**
  * @route   PATCH /api/admin/complaints/:id/follow-up
  * @desc    Mark complaint as "Follow-up Initiated"
  * @access  Private (Admin only)
  */
-router.patch('/complaints/:id/follow-up', adminController.markFollowUpInitiated);
+router.patch('/complaints/:id/follow-up', idParam, validate, adminController.markFollowUpInitiated);
+
+/** List / create government official accounts */
+router.get('/officials', adminController.listOfficials);
+router.post('/officials', createOfficialValidation, validate, adminController.createOfficial);
+
+/** Cross-department analytics for the admin overview */
+router.get('/analytics', adminController.getAnalytics);
 
 module.exports = router;

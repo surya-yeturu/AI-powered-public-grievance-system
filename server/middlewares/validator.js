@@ -1,4 +1,4 @@
-const { body, validationResult } = require('express-validator');
+const { body, param, validationResult } = require('express-validator');
 
 // Validation middleware to check for errors
 exports.validate = (req, res, next) => {
@@ -86,4 +86,19 @@ exports.statusUpdateValidation = [
   body('remarks')
     .optional()
     .trim()
+];
+
+// Route param must be a valid Mongo ObjectId (prevents CastError -> 500)
+exports.idParam = [
+  param('id').isMongoId().withMessage('Invalid complaint id')
+];
+
+// Admin creates a government official account
+exports.createOfficialValidation = [
+  body('name').trim().isLength({ min: 2 }).withMessage('Name must be at least 2 characters'),
+  body('email').trim().isEmail().withMessage('Please provide a valid email'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
+  body('department')
+    .isIn(['Roads', 'Electricity', 'Drainage', 'Sanitation'])
+    .withMessage('Department must be one of Roads, Electricity, Drainage, Sanitation')
 ];

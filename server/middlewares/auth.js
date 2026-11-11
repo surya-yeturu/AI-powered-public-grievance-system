@@ -45,8 +45,7 @@ exports.authenticate = async (req, res, next) => {
     }
     res.status(500).json({
       success: false,
-      message: 'Authentication error',
-      error: error.message
+      message: 'Authentication error'
     });
   }
 };

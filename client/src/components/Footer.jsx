@@ -7,17 +7,18 @@ const Footer = () => {
     <footer className="site-footer">
       <div className="footer-container">
         <div className="footer-brand">
-          <span className="footer-logo">Smart City Civic Grievance Platform</span>
+          <span className="footer-logo">Smart City Grievance Platform</span>
+          <p className="footer-disclaimer">
+            AI-assisted classification and prioritisation. Final decisions always remain with the responsible authorities.
+          </p>
         </div>
-        <p className="footer-disclaimer">
-          This platform uses an AI-assisted decision-support system for classification and prioritization. Final decisions remain with the responsible authorities.
-        </p>
         <div className="footer-links">
           <Link to="/">Home</Link>
-          <a href="#privacy">Privacy</a>
-          <a href="#help">Help</a>
+          <Link to="/citizen/new-complaint">Report an issue</Link>
+          <Link to="/login">Track a complaint</Link>
         </div>
       </div>
+      <div className="footer-bottom">© {new Date().getFullYear()} Smart City Grievance Platform</div>
     </footer>
   );
 };

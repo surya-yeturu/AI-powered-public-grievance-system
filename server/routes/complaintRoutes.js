@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const complaintController = require('../controllers/complaintController');
 const { authenticate, authorize } = require('../middlewares/auth');
-const { complaintValidation, statusUpdateValidation, validate } = require('../middlewares/validator');
+const { complaintValidation, statusUpdateValidation, idParam, validate } = require('../middlewares/validator');
 const { optionalProgressImages } = require('../middlewares/uploadProgressImages');
 
 /**
@@ -74,6 +74,8 @@ router.get(
 router.get(
   '/:id',
   authenticate,
+  idParam,
+  validate,
   complaintController.getComplaintById
 );
 
@@ -86,6 +88,8 @@ router.patch(
   '/:id/status',
   authenticate,
   authorize('official', 'admin'),
+  idParam,
+  validate,
   optionalProgressImages,
   statusUpdateValidation,
   validate,

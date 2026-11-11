@@ -10,6 +10,7 @@ const OfficialDashboard = () => {
   const [dailyPlan, setDailyPlan] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [query, setQuery] = useState('');
   const [filters, setFilters] = useState({ priority: '', basePriority: '', status: '', department: '' });
 
   const { user } = useAuth();
@@ -44,6 +45,10 @@ const OfficialDashboard = () => {
     }
   };
 
+  const visible = query.trim()
+    ? complaints.filter((c) => `${c.complaintText} ${c.location} ${c.department}`.toLowerCase().includes(query.trim().toLowerCase()))
+    : complaints;
+
   const handleFilterChange = (filterType, value) => {
     setFilters(prev => ({
       ...prev,
@@ -64,7 +69,8 @@ const OfficialDashboard = () => {
   if (loading && complaints.length === 0) {
     return (
       <div className="page-container">
-        <div className="loading-container">Loading...</div>
+        <div className="stats-grid">{[1, 2, 3, 4].map((i) => <div key={i} className="skeleton skeleton-stat" />)}</div>
+        {[1, 2, 3].map((i) => <div key={i} className="skeleton skeleton-card" />)}
       </div>
     );
   }
@@ -119,7 +125,7 @@ const OfficialDashboard = () => {
 
       <div className="stats-grid">
         <div className="stat-card">
-          <span className="stat-value">{complaints.length}</span>
+          <span className="stat-value">{visible.length}</span>
           <span className="stat-label">Total</span>
         </div>
         <div className="stat-card stat-pending">
@@ -184,10 +190,22 @@ const OfficialDashboard = () => {
         </div>
       </div>
 
+      <div className="filter-bar" style={{ marginBottom: 'var(--spacing-md)' }}>
+        <input
+          type="search"
+          className="search-input"
+          style={{ marginLeft: 0 }}
+          placeholder="Search by text, location or department…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          aria-label="Search complaints"
+        />
+      </div>
+
       <div className="complaints-section">
         {loading ? (
           <div className="loading-message">Loading...</div>
-        ) : complaints.length === 0 ? (
+        ) : visible.length === 0 ? (
           <div className="empty-state">
             <p className="empty-state-title">No complaints found</p>
             <p className="empty-state-text">No complaints match the selected filters.</p>
@@ -208,13 +226,14 @@ const OfficialDashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {complaints.map((c) => {
+                {visible.map((c) => {
                   const baseP = c.basePriority || c.priority;
                   const daysPending = c.daysPending ?? 0;
                   const indicators = [];
                   if (c.status !== 'Resolved' && daysPending > 0) indicators.push({ key: 'delay', label: 'Urgent due to delay' });
                   if (c.sensitiveLocation) indicators.push({ key: 'location', label: 'Sensitive location' });
                   if (c.escalatedByRules) indicators.push({ key: 'ai', label: 'AI escalated' });
+                  if (c.needsReview) indicators.push({ key: 'review', label: 'Needs review' });
                   if (c.escalatedToAdmin) indicators.push({ key: 'escalated', label: 'Escalated – Admin Notified' });
                   return (
                     <tr key={c._id}>

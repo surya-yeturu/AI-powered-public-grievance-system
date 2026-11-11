@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { complaintAPI, uploadImage } from '../services/api';
+import { useToast } from '../context/ToastContext';
 import '../styles/Form.css';
 
 const ACCEPT_IMAGES = 'image/jpeg,image/png,image/gif,image/webp';
@@ -18,7 +19,9 @@ const NewComplaint = () => {
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState(false);
+  const [result, setResult] = useState(null);
+  const [dragging, setDragging] = useState(false);
+  const toast = useToast();
   const fileInputRef = useRef(null);
 
   const navigate = useNavigate();
@@ -28,9 +31,20 @@ const NewComplaint = () => {
     setError('');
   };
 
-  const handleFileSelect = async (e) => {
-    const file = e.target.files?.[0];
+  const handleFileSelect = (e) => uploadFile(e.target.files?.[0]);
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragging(false);
+    uploadFile(e.dataTransfer.files?.[0]);
+  };
+
+  const uploadFile = async (file) => {
     if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setError('Please choose an image file (JPEG, PNG, GIF or WebP).');
+      return;
+    }
     if (file.size > MAX_FILE_MB * 1024 * 1024) {
       setError(`Image must be under ${MAX_FILE_MB} MB.`);
       return;
@@ -67,24 +81,50 @@ const NewComplaint = () => {
     setLoading(true);
 
     try {
-      await complaintAPI.create(formData);
-      setSuccess(true);
-      setTimeout(() => navigate('/citizen/dashboard'), 2000);
+      const res = await complaintAPI.create(formData);
+      setResult(res.data.data);
+      toast.success('Complaint submitted');
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to submit complaint');
+      const msg = err.response?.data?.errors?.[0]?.message || err.response?.data?.message || 'Failed to submit complaint';
+      setError(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  if (success) {
+  if (result) {
+    const c = result.complaint;
+    const ai = result.aiClassification || {};
+    const pct = ai.confidence != null ? Math.round(ai.confidence * 100) : null;
     return (
       <div className="page-container form-container">
         <div className="success-card">
           <div className="success-icon">✓</div>
-          <h2>Complaint Submitted Successfully</h2>
-          <p>Your complaint has been received and assigned to the appropriate department using AI classification.</p>
-          <p className="text-small">Redirecting to your dashboard...</p>
+          <h2>Complaint submitted</h2>
+          <p>Here is how our AI understood and routed your complaint.</p>
+
+          <div className="ai-result">
+            <div className="ai-result-row"><span>Routed to</span><span className="badge department-badge">{c.department}</span></div>
+            <div className="ai-result-row">
+              <span>Priority</span>
+              <span className={`badge priority-badge priority-${(c.basePriority || c.priority).toLowerCase()}`}>{c.basePriority || c.priority}</span>
+            </div>
+            {pct !== null && (
+              <div className="ai-result-row">
+                <span>AI confidence</span>
+                <span className="ai-confidence"><span className="ai-confidence-bar"><i style={{ width: `${pct}%` }} /></span>{pct}%</span>
+              </div>
+            )}
+            <p className="ai-result-reason">{c.priorityReason}</p>
+            {(ai.needsReview || !ai.success) && (
+              <p className="ai-result-review">An official will double-check the category for this complaint.</p>
+            )}
+          </div>
+
+          <div className="form-actions" style={{ justifyContent: 'center' }}>
+            <button type="button" className="btn btn-secondary" onClick={() => navigate(`/complaint/${c._id}`)}>View complaint</button>
+            <button type="button" className="btn btn-primary" onClick={() => navigate('/citizen/dashboard')}>Go to my complaints</button>
+          </div>
         </div>
       </div>
     );
@@ -141,7 +181,13 @@ const NewComplaint = () => {
 
           <div className="form-group">
             <label>Photo (optional)</label>
-            <div className="upload-area">
+            <div
+              className={`upload-area upload-dropzone${dragging ? ' dragging' : ''}`}
+              onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+              onDragLeave={() => setDragging(false)}
+              onDrop={handleDrop}
+            >
+              {formData.imageUrl && <img src={formData.imageUrl} alt="Preview" className="upload-preview" />}
               <input
                 ref={fileInputRef}
                 type="file"
@@ -156,7 +202,7 @@ const NewComplaint = () => {
                 onClick={() => fileInputRef.current?.click()}
                 disabled={uploading}
               >
-                {uploading ? 'Uploading...' : 'Choose file to upload'}
+                {uploading ? 'Uploading...' : 'Choose or drop a photo'}
               </button>
               {imageFile && (
                 <span className="upload-filename">
